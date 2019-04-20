@@ -4,14 +4,15 @@ import os
 
 app = Flask(__name__)
 
+count=0
+
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-from models import User
+from models import User, Note, Notepad, Notepad_Notes
 
 @app.route("/")
-
 def hello():
     return "Hello world"
 
@@ -22,13 +23,44 @@ def signup_user():
     try: 
         user=User(
             name=name,
-            password=password
+            password=password,
         )
+        user.note_book = user.id
         db.session.add(user)
         db.session.commit()
         return "Welcome {}".format(user.name)
     except Exception as e:
         return (str(e))
+
+@app.route("/<id_>/add/notepad")
+def add_notepad(id_):
+    try: 
+        user=User.query.filter_by(id=id_).first()
+        notepad=Notepad(
+            user=user.id,
+            person=user
+        )
+        db.session.add(notepad)
+        db.session.commit()
+        return "Added {}".format(notepad.user)
+    except Exception as e:
+        return (str(e))
+
+@app.route("/<id_>/add/note")
+def get_by_noteid(id_):
+        try:
+            notepad= Notepad.query.filter_by(user=id_).first()
+            note = Note(
+                title="title",
+                text="text",
+                notepad = notepad
+            )
+            db.session.add(note)
+            notepad.notes.append(note)
+            db.session.commit()
+            return "Yes"
+        except Exception as e:
+            return (str(e))
 
 @app.route("/showusers")
 def show_users():
@@ -47,15 +79,8 @@ def get_by_id(id_):
         return (str(e))
 
 @app.route("/name/<name>")
-
 def get_book_name(name):
     return "name : {}".format(name)
-
-@app.route("/details")
-def get_bok_details():
-    author = request.args.get('author')
-    published = request.args.get('pubished')
-    return "Author: {}, Published: {}".format(author,published)
 
 
 @app.route("/users")
