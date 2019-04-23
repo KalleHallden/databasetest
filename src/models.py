@@ -85,7 +85,6 @@ class Note(db.Model):
             'id' : self.id,
             'text' : self.text,
             'title' : self.title,
-            'notepad' : self.notepad,
             'notepad_id' : self.notepad_id
         }
 

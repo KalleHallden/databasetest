@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import os
-
+import json
 app = Flask(__name__)
 
 count=0
@@ -46,13 +46,13 @@ def add_notepad(id_):
     except Exception as e:
         return (str(e))
 
-@app.route("/<id_>/add/note")
+@app.route("/<id_>/hello/note")
 def get_by_noteid(id_):
         try:
             notepad= Notepad.query.filter_by(user=id_).first()
             note = Note(
-                title="title",
-                text="text",
+                title="Kalles' note",
+                text="This is my incredible note",
                 notepad = notepad
             )
             db.session.add(note)
@@ -61,6 +61,43 @@ def get_by_noteid(id_):
             return "Yes"
         except Exception as e:
             return (str(e))
+
+
+@app.route("/<id_>/note", methods=['GET', 'POST'])
+def get_note_by_id(id_):
+    r = request
+    if r.method == 'GET':
+        try:
+            user = User.query.filter_by(id=id_).first()
+            notepad = Notepad.query.filter_by(user=id_).first()
+            notes = Note.query.filter_by(notepad_id=notepad.note_pad_id).all()
+            length = len(notes)
+            note = notes[length-1]
+            return jsonify(note.serialize())
+        except Exception as e:
+            return (str(e))
+    if r.method == 'POST':
+        try:
+            jsonNote = json.loads(r.data)
+            text = jsonNote['text']
+            title = jsonNote['title']
+            notepad= Notepad.query.filter_by(user=id_).first()
+            note = Note(
+                title=text,
+                text=title,
+                notepad = notepad
+            )
+            db.session.add(note)
+            notepad.notes.append(note)
+            db.session.commit()
+            
+            return ("this is text")
+        except Exception as e:
+            print(str(e))
+            print(r.data)
+            return (str(e))
+
+
 
 @app.route("/showusers")
 def show_users():
@@ -90,10 +127,6 @@ def get_all_users():
     for user in users:
         listOfUsers += "\n{}".format(user)
     return listOfUsers
-
-@app.route("/<name>")
-def get_user(name):
-    return "This is your profile {}".format(name)
 
 if __name__ == '__main__':
     app.run
